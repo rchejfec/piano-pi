@@ -24,6 +24,7 @@ from leds import StatusLEDs, State
 from synth import FluidSynthManager
 from midi_monitor import MidiMonitor
 from buttons import ButtonHandler
+from web_server import create_app, start_server, broadcast_event
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -96,6 +97,10 @@ def main():
     signal.signal(signal.SIGTERM, shutdown_signal)
     signal.signal(signal.SIGINT, shutdown_signal)
 
+    # --- Web Portal ---
+    app = create_app(synth, midi, leds, on_restart, on_shutdown)
+    start_server(app, port=8080)
+
     log.info("Ready! Waiting for input...")
 
     # --- Main loop: just keep alive, everything is event-driven ---
@@ -165,18 +170,21 @@ def on_next_instrument():
     """Button 2 short press — next instrument."""
     name = synth.next_instrument()
     log.info("🎵 Next instrument: %s", name)
+    broadcast_event("instrument", {"name": name, "index": synth._current_instrument_index})
 
 
 def on_prev_instrument():
     """Button 3 — previous instrument."""
     name = synth.prev_instrument()
     log.info("🎵 Previous instrument: %s", name)
+    broadcast_event("instrument", {"name": name, "index": synth._current_instrument_index})
 
 
 def on_reset_instrument():
     """Button 2 hold — reset to core piano (instrument 0)."""
     name = synth.reset_instrument()
     log.info("🎹 Reset to core: %s", name)
+    broadcast_event("instrument", {"name": name, "index": 0})
 
 
 def update_led_state():

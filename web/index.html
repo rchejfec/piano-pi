@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Piano Pi</title>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a2e;
+    --surface2: #16213e;
+    --accent: #e94560;
+    --accent2: #0f3460;
+    --text: #eee;
+    --text-dim: #888;
+    --core: #e94560;
+    --active: #00d2ff;
+    --green: #00e676;
+    --red: #ff5252;
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Header */
+  .header {
+    padding: 20px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header h1 {
+    font-size: 1.4em;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .header h1 span { color: var(--accent); }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85em;
+    color: var(--text-dim);
+  }
+
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--red);
+    transition: background 0.3s;
+  }
+
+  .status-dot.ready { background: var(--green); }
+  .status-dot.no-midi { background: #ffc107; }
+
+  /* Current instrument display */
+  .current {
+    padding: 0 20px 20px;
+    text-align: center;
+  }
+
+  .current-name {
+    font-size: 1.8em;
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin: 8px 0 4px;
+    transition: all 0.2s;
+  }
+
+  .current-label {
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+  }
+
+  /* Instrument list */
+  .instruments {
+    padding: 0 16px 16px;
+  }
+
+  .section-label {
+    font-size: 0.7em;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    padding: 12px 8px 6px;
+  }
+
+  .inst-btn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 14px 16px;
+    margin: 4px 0;
+    background: var(--surface);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-appearance: none;
+    text-align: left;
+  }
+
+  .inst-btn:active {
+    transform: scale(0.97);
+  }
+
+  .inst-btn.active {
+    border-color: var(--active);
+    background: var(--surface2);
+    box-shadow: 0 0 20px rgba(0, 210, 255, 0.15);
+  }
+
+  .inst-btn .star {
+    margin-right: 10px;
+    font-size: 0.8em;
+    opacity: 0.6;
+  }
+
+  .inst-btn.core .star {
+    color: var(--core);
+    opacity: 1;
+  }
+
+  /* Actions */
+  .actions {
+    padding: 20px 16px;
+    display: flex;
+    gap: 12px;
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .action-btn:active { transform: scale(0.96); }
+
+  .btn-restart {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid #333;
+  }
+
+  .btn-shutdown {
+    background: var(--surface);
+    color: var(--red);
+    border: 1px solid #333;
+  }
+
+  /* MIDI info */
+  .midi-info {
+    padding: 8px 20px 24px;
+    font-size: 0.8em;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  /* Toast notification */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--surface2);
+    color: var(--text);
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 0.9em;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.3s ease;
+    z-index: 100;
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎹 Piano <span>Pi</span></h1>
+  <div class="status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Connecting...</span>
+  </div>
+</div>
+
+<div class="current">
+  <div class="current-label">Now Playing</div>
+  <div class="current-name" id="currentInstrument">—</div>
+</div>
+
+<div class="instruments" id="instrumentList">
+  <!-- Populated by JS -->
+</div>
+
+<div class="actions">
+  <button class="action-btn btn-restart" onclick="restartSynth()">🔄 Restart</button>
+  <button class="action-btn btn-shutdown" onclick="shutdownPi()">⏻ Shutdown</button>
+</div>
+
+<div class="midi-info" id="midiInfo">—</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let currentState = {};
+
+  // Fetch initial state
+  async function fetchState() {
+    try {
+      const res = await fetch('/api/state');
+      const data = await res.json();
+      updateUI(data);
+    } catch (e) {
+      setStatus('offline', 'Offline');
+    }
+  }
+
+  // Update UI from state
+  function updateUI(state) {
+    currentState = state;
+
+    // Status dot
+    if (!state.synth_running) {
+      setStatus('error', 'Error');
+    } else if (state.midi_connected) {
+      setStatus('ready', 'Ready');
+    } else {
+      setStatus('no-midi', 'No MIDI');
+    }
+
+    // Current instrument
+    document.getElementById('currentInstrument').textContent = state.instrument;
+
+    // MIDI info
+    document.getElementById('midiInfo').textContent =
+      state.midi_connected ? '🎹 MIDI controller connected' : 'No MIDI controller detected';
+
+    // Instrument list
+    renderInstruments(state.instruments);
+  }
+
+  function setStatus(cls, text) {
+    const dot = document.getElementById('statusDot');
+    dot.className = 'status-dot ' + cls;
+    document.getElementById('statusText').textContent = text;
+  }
+
+  function renderInstruments(instruments) {
+    const list = document.getElementById('instrumentList');
+    let html = '';
+    let lastCore = null;
+
+    instruments.forEach(inst => {
+      const isCore = inst.core;
+      if (isCore && lastCore !== true) {
+        html += '<div class="section-label">Core</div>';
+      } else if (!isCore && lastCore !== false) {
+        html += '<div class="section-label">Extras</div>';
+      }
+      lastCore = isCore;
+
+      const activeClass = inst.active ? ' active' : '';
+      const coreClass = isCore ? ' core' : '';
+      const star = isCore ? '★' : '○';
+
+      html += `<button class="inst-btn${activeClass}${coreClass}"
+                       onclick="selectInstrument(${inst.index})"
+                       data-index="${inst.index}">
+                 <span class="star">${star}</span>
+                 ${inst.name}
+               </button>`;
+    });
+
+    list.innerHTML = html;
+  }
+
+  // Actions
+  async function selectInstrument(index) {
+    try {
+      const res = await fetch(`/api/instrument/${index}`, { method: 'POST' });
+      const data = await res.json();
+      showToast(`🎵 ${data.instrument}`);
+      fetchState();
+    } catch (e) {
+      showToast('❌ Failed');
+    }
+  }
+
+  async function restartSynth() {
+    showToast('🔄 Restarting...');
+    try {
+      await fetch('/api/restart', { method: 'POST' });
+      setTimeout(fetchState, 4000);
+    } catch (e) {
+      showToast('❌ Failed');
+    }
+  }
+
+  async function shutdownPi() {
+    if (!confirm('Shut down Piano Pi? You\'ll need to unplug and replug to restart.')) return;
+    showToast('⏻ Shutting down...');
+    try {
+      await fetch('/api/shutdown', { method: 'POST' });
+    } catch (e) {
+      // Expected — Pi shuts down
+    }
+  }
+
+  // Toast
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+
+  // SSE — real-time updates from breadboard buttons
+  function connectSSE() {
+    const es = new EventSource('/api/events');
+
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'instrument') {
+          showToast(`🎵 ${data.name}`);
+          fetchState();
+        } else if (data.type === 'state') {
+          fetchState();
+        }
+      } catch (err) {}
+    };
+
+    es.onerror = () => {
+      es.close();
+      setTimeout(connectSSE, 3000);
+    };
+  }
+
+  // Init
+  fetchState();
+  connectSSE();
+</script>
+
+</body>
+</html>
