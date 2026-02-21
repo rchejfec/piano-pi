@@ -9,6 +9,7 @@ A standalone MIDI piano practice device on a Raspberry Pi 3. Plug in a USB MIDI 
 - **Auto-starts on boot** — powered by systemd, no SSH required
 - **Auto-detects MIDI controllers** — hotplug support, reconnects automatically
 - **Instrument switching** — cycle through GM sounds with breadboard buttons
+- **Web portal** — phone-friendly UI at `http://<pi-ip>:8080` for instrument selection, restart, and shutdown
 - **LED status indicator** — single red LED: solid = ready, blink patterns for starting/error
 - **Safe shutdown** — long-press button to safely power down before unplugging
 - **Error recovery** — auto-restarts FluidSynth if it crashes
