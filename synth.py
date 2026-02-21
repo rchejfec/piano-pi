@@ -38,10 +38,16 @@ class FluidSynthManager:
             return True
 
         if not os.path.isfile(config.SOUNDFONT_PATH):
-            log.error("SoundFont not found: %s", config.SOUNDFONT_PATH)
-            return False
+            if hasattr(config, 'SOUNDFONT_FALLBACK') and os.path.isfile(config.SOUNDFONT_FALLBACK):
+                log.warning("Primary SoundFont not found, using fallback: %s", config.SOUNDFONT_FALLBACK)
+                soundfont = config.SOUNDFONT_FALLBACK
+            else:
+                log.error("No SoundFont found!")
+                return False
+        else:
+            soundfont = config.SOUNDFONT_PATH
 
-        cmd = config.FLUIDSYNTH_CMD + [config.SOUNDFONT_PATH]
+        cmd = config.FLUIDSYNTH_CMD + [soundfont]
         log.info("Starting FluidSynth: %s", " ".join(cmd))
 
         try:
@@ -123,6 +129,11 @@ class FluidSynthManager:
         self._current_instrument_index = (
             (self._current_instrument_index - 1) % len(config.INSTRUMENTS)
         )
+        return self._apply_instrument()
+
+    def reset_instrument(self) -> str:
+        """Reset to the first instrument (core piano). Returns the instrument name."""
+        self._current_instrument_index = 0
         return self._apply_instrument()
 
     def get_current_instrument(self) -> str:

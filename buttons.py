@@ -26,19 +26,23 @@ class ButtonHandler:
     """Manages physical buttons and dispatches actions."""
 
     def __init__(self, on_restart=None, on_shutdown=None,
-                 on_next_instrument=None, on_prev_instrument=None):
+                 on_next_instrument=None, on_prev_instrument=None,
+                 on_reset_instrument=None):
         """
         Args:
             on_restart: Callback when short-press on button 1
             on_shutdown: Callback when long-press on button 1
-            on_next_instrument: Callback when button 2 pressed
+            on_next_instrument: Callback when short-press on button 2
+            on_reset_instrument: Callback when hold button 2 (reset to core piano)
             on_prev_instrument: Callback when button 3 pressed
         """
         self._on_restart = on_restart
         self._on_shutdown = on_shutdown
         self._on_next = on_next_instrument
         self._on_prev = on_prev_instrument
-        self._press_time = None  # Track when button 1 was pressed
+        self._on_reset = on_reset_instrument
+        self._btn1_press_time = None
+        self._btn2_press_time = None
 
         if Button is None:
             log.warning("gpiozero not available — buttons disabled (dev mode)")
@@ -56,13 +60,14 @@ class ButtonHandler:
         self.btn_restart.when_pressed = self._on_btn1_pressed
         self.btn_restart.when_released = self._on_btn1_released
 
-        # Button 2: next instrument
+        # Button 2: next instrument / hold to reset
         self.btn_next = Button(
             config.BUTTON_NEXT_INST,
             pull_up=True,
             bounce_time=config.DEBOUNCE_SECONDS,
         )
         self.btn_next.when_pressed = self._on_btn2_pressed
+        self.btn_next.when_released = self._on_btn2_released
 
         # Button 3: previous instrument
         self.btn_prev = Button(
@@ -77,15 +82,15 @@ class ButtonHandler:
 
     def _on_btn1_pressed(self):
         """Record when button 1 was pressed."""
-        self._press_time = time.monotonic()
+        self._btn1_press_time = time.monotonic()
 
     def _on_btn1_released(self):
         """On release, decide short press vs long press."""
-        if self._press_time is None:
+        if self._btn1_press_time is None:
             return
 
-        held = time.monotonic() - self._press_time
-        self._press_time = None
+        held = time.monotonic() - self._btn1_press_time
+        self._btn1_press_time = None
 
         if held >= config.LONG_PRESS_SECONDS:
             log.info("Button 1: LONG press (%.1fs) -> shutdown", held)
@@ -97,10 +102,25 @@ class ButtonHandler:
                 self._on_restart()
 
     def _on_btn2_pressed(self):
-        """Button 2 pressed -> next instrument."""
-        log.info("Button 2: next instrument")
-        if self._on_next:
-            self._on_next()
+        """Record when button 2 was pressed."""
+        self._btn2_press_time = time.monotonic()
+
+    def _on_btn2_released(self):
+        """Short press = next instrument, hold = reset to core piano."""
+        if self._btn2_press_time is None:
+            return
+
+        held = time.monotonic() - self._btn2_press_time
+        self._btn2_press_time = None
+
+        if held >= config.RESET_HOLD_SECONDS:
+            log.info("Button 2: HOLD (%.1fs) -> reset to core piano", held)
+            if self._on_reset:
+                self._on_reset()
+        else:
+            log.info("Button 2: press -> next instrument")
+            if self._on_next:
+                self._on_next()
 
     def _on_btn3_pressed(self):
         """Button 3 pressed -> previous instrument."""

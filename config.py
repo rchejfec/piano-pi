@@ -8,11 +8,11 @@ Edit this file to match your wiring and preferences.
 # ---------------------------------------------------------------------------
 # GPIO Pin Assignments (BCM numbering)
 # Wire each button between the GPIO pin and GND (gpiozero uses internal pull-ups)
-# Wire each LED with a resistor (220Ω–330Ω) between the GPIO pin and the LED anode
+# Wire LED with a resistor (220Ω–330Ω) between the GPIO pin and the LED anode
 # ---------------------------------------------------------------------------
 
 BUTTON_RESTART = 17     # Short press = restart synth, Long press = shutdown
-BUTTON_NEXT_INST = 27   # Next instrument
+BUTTON_NEXT_INST = 27   # Next instrument (hold = reset to core piano)
 BUTTON_PREV_INST = 22   # Previous instrument
 
 LED_RED = 24            # Single status LED (solid=ready, blink=shutting down)
@@ -22,13 +22,15 @@ LED_RED = 24            # Single status LED (solid=ready, blink=shutting down)
 # ---------------------------------------------------------------------------
 
 LONG_PRESS_SECONDS = 3.0     # Hold this long to trigger shutdown
+RESET_HOLD_SECONDS = 1.0     # Hold Next button this long to reset to core piano
 DEBOUNCE_SECONDS = 0.05      # 50ms debounce (gpiozero default is fine)
 
 # ---------------------------------------------------------------------------
 # FluidSynth Settings (tuned for Raspberry Pi 3)
 # ---------------------------------------------------------------------------
 
-SOUNDFONT_PATH = "/usr/share/sounds/sf2/FluidR3_GM.sf2"
+SOUNDFONT_PATH = "/home/pi/piano-pi-brain/soundfonts/SalamanderGrandPiano.sf2"
+SOUNDFONT_FALLBACK = "/usr/share/sounds/sf2/FluidR3_GM.sf2"
 
 FLUIDSYNTH_CMD = [
     "fluidsynth",
@@ -47,21 +49,22 @@ FLUIDSYNTH_CMD = [
 
 # ---------------------------------------------------------------------------
 # Instruments (General MIDI program numbers)
-# Cycle through these with next/prev buttons
+#
+# Core 3 = hold Next button to reset to #1
+# Extras = keep scrolling with Next/Prev
 # ---------------------------------------------------------------------------
 
 INSTRUMENTS = [
-    {"name": "Acoustic Grand Piano",   "program": 0},
-    {"name": "Bright Acoustic Piano",  "program": 1},
+    # --- Core 3 ---
+    {"name": "Grand Piano",            "program": 0,  "core": True},
+    {"name": "Clavinet",               "program": 7,  "core": True},
+    {"name": "Strings Ensemble",       "program": 48, "core": True},
+    # --- Extras ---
     {"name": "Electric Grand Piano",   "program": 2},
-    {"name": "Honky-tonk Piano",       "program": 3},
-    {"name": "Rhodes Piano",           "program": 4},
-    {"name": "Chorused Piano",         "program": 5},
-    {"name": "Harpsichord",            "program": 6},
-    {"name": "Clavinet",               "program": 7},
-    {"name": "Church Organ",           "program": 19},
     {"name": "Acoustic Guitar Nylon",  "program": 24},
-    {"name": "Strings Ensemble",       "program": 48},
+    {"name": "Rhodes Piano",           "program": 4},
+    {"name": "Rock Organ",             "program": 18},
+    {"name": "Overdriven Guitar",      "program": 29},
     {"name": "Synth Pad (warm)",       "program": 89},
 ]
 

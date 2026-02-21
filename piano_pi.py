@@ -89,6 +89,7 @@ def main():
         on_shutdown=on_shutdown,
         on_next_instrument=on_next_instrument,
         on_prev_instrument=on_prev_instrument,
+        on_reset_instrument=on_reset_instrument,
     )
 
     # --- Signal handlers for clean exit ---
@@ -161,7 +162,7 @@ def on_shutdown():
 
 
 def on_next_instrument():
-    """Button 2 — next instrument."""
+    """Button 2 short press — next instrument."""
     name = synth.next_instrument()
     log.info("🎵 Next instrument: %s", name)
 
@@ -170,6 +171,12 @@ def on_prev_instrument():
     """Button 3 — previous instrument."""
     name = synth.prev_instrument()
     log.info("🎵 Previous instrument: %s", name)
+
+
+def on_reset_instrument():
+    """Button 2 hold — reset to core piano (instrument 0)."""
+    name = synth.reset_instrument()
+    log.info("🎹 Reset to core: %s", name)
 
 
 def update_led_state():
