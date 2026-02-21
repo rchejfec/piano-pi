@@ -3,11 +3,11 @@
 Piano Pi Brain — Main Orchestrator
 
 Entry point that ties everything together:
-  1. Initialize LEDs (yellow = starting)
+  1. Initialize LED (blink = starting)
   2. Start FluidSynth
   3. Start MIDI monitor (auto-connect controllers)
   4. Initialize buttons
-  5. Green LED = ready, sit in main loop
+  5. LED solid = ready, sit in main loop
 
 Usage:
     python3 piano_pi.py

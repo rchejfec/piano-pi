@@ -1,3 +1,5 @@
+> Weekend project to turn a Raspberry Pi into a standalone practice piano. Built with Claude Opus 4.
+
 # Piano Pi Brain 🎹
 
 A standalone MIDI piano practice device on a Raspberry Pi 3. Plug in a USB MIDI controller, power on, and play — no computer needed.
@@ -6,8 +8,8 @@ A standalone MIDI piano practice device on a Raspberry Pi 3. Plug in a USB MIDI 
 
 - **Auto-starts on boot** — powered by systemd, no SSH required
 - **Auto-detects MIDI controllers** — hotplug support, reconnects automatically
-- **Instrument switching** — cycle through 12 GM sounds with breadboard buttons
-- **LED status indicator** — solid = ready, blinking = starting/shutting down
+- **Instrument switching** — cycle through GM sounds with breadboard buttons
+- **LED status indicator** — single red LED: solid = ready, blink patterns for starting/error
 - **Safe shutdown** — long-press button to safely power down before unplugging
 - **Error recovery** — auto-restarts FluidSynth if it crashes
 
@@ -16,10 +18,10 @@ A standalone MIDI piano practice device on a Raspberry Pi 3. Plug in a USB MIDI 
 | Component | Details |
 |-----------|---------|
 | Pi | Raspberry Pi 3, OS Lite Legacy 64-bit |
-| Audio | 3.5mm jack → powered speaker |
-| MIDI | M-Audio Keystation 49 MK3 (any USB MIDI controller works) |
+| Audio | 3.5mm jack → speaker (or MonkMakes Amplified Speaker 2) |
+| MIDI | M-Audio Keystation 49 MK3 / Arturia MiniLab 3 (any USB MIDI works) |
 | Buttons | 3 push buttons on breadboard |
-| LED | 1 red LED for status |
+| LED | 1 red LED on GPIO 24 |
 
 ## Wiring
 
@@ -37,8 +39,6 @@ A standalone MIDI piano practice device on a Raspberry Pi 3. Plug in a USB MIDI 
 |-----|-----------|--------|
 | Red (status) | 24 | 18 |
 
-See [docs/WIRING_GUIDE.md](docs/WIRING_GUIDE.md) for detailed beginner-friendly wiring instructions.
-
 ## Setup
 
 ```bash
@@ -55,14 +55,14 @@ sudo systemctl enable piano-pi
 sudo reboot
 ```
 
-## LED Status
+## LED Status (Red LED)
 
 | Pattern | Meaning |
 |---------|---------|
 | Solid | Ready to play |
-| Slow blink | Starting up — wait |
-| Fast blink | Shutting down — safe to unplug when off |
-| Uneven blink | Error — press restart button |
+| Blink (0.3s) | Starting up — wait |
+| Fast blink (0.1s) | Shutting down — safe to unplug when off |
+| Uneven blink (0.8/0.2s) | Error — press restart button |
 
 ## Instruments
 
