@@ -1,0 +1,22 @@
+[Unit]
+Description=Piano Pi Brain — MIDI Piano Practice Device
+After=sound.target
+Wants=sound.target
+
+[Service]
+Type=simple
+User=pi
+Group=audio
+WorkingDirectory=/home/pi/piano-pi-brain
+ExecStart=/usr/bin/python3 /home/pi/piano-pi-brain/piano_pi.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Give FluidSynth access to realtime scheduling
+LimitRTPRIO=90
+LimitMEMLOCK=infinity
+
+[Install]
+WantedBy=multi-user.target
